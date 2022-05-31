@@ -1,0 +1,18 @@
+ vector<string> history_of_people(){
+        auto temp = this;
+        vector<string> branch;
+        while (temp->parent){
+            branch.emplace_back(temp->name);
+            temp = temp->parent;
+        }
+        branch.emplace_back(temp->name);
+        return branch;
+    }
+    bool is_descendent(string& second_name){
+        auto temp = this;
+        while (temp->parent){
+            if (temp->parent->name == second_name) return true;
+            temp = temp->parent;
+        }
+        return false;
+    }

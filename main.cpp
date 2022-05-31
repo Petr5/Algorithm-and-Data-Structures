@@ -29,8 +29,16 @@
 //#define B7_2
 //#define B7_3
 //#define B7_4
-#define B7_5_beta
+//#define B7_5_beta
+//#define B7_5_beta2
 //#define B7_5
+//#define B8_1
+//#define B8_2
+//#define B8_2_vector
+#define B8_3
+
+
+
 
 #ifdef B2
 #include <iostream>
@@ -1550,7 +1558,9 @@ int main(){
     for (size_t i = 0; i < 2 * N; ++i){
         if (!points[i][0]) {
             for (auto& el: opened_rectangle)
-                components_rectangle[el].insert(points[i][5]);
+                if (points[i][1] < coordinate_closed_rectangle[el].first && points[i][2] < coordinate_closed_rectangle[el].second){
+                    components_rectangle[el].insert(points[i][5]);
+                }
             opened_rectangle.insert(points[i][5]);
         }
         else{
@@ -1577,13 +1587,645 @@ int main(){
 
 #endif
 
-#ifdef B7_5
-#include <iostream>
+#ifdef B7_5_beta2
+#include <vector>
 #include <algorithm>
+#include <iostream>
+#include <unordered_set>
+#include <cmath>
+using namespace std;
+typedef long double ld;
+ld CalcArea(const pair<ld, ld>& fp, const pair<ld, ld>& sp){
+    return (sp.second - fp.second) * (sp.first * sp.first - fp.first * fp.first) * 0.5;
+}
+static auto cmp = [](std::vector<ld> const & first, std::vector<ld> const & second)
+{
+    for (size_t i = 0; i < first.size(); ++i){
 
+        if (i >= 3){
+            if (!first[0])
+            {if (first[i] > second[i]) return true; else if (first[i] < second[i]) return false;}
+            else
+            {if (first[i] > second[i]) return true; else if (first[i] < second[i]) return false;}
+        }
+        else{
+            if (first[i] < second[i]) return true;
+            else if (first[i] > second[i]) return false;
+        }
+
+    }
+};
 int main(){
+    size_t N;
+    cin >> N;
+    ld x, x2, y, y2;
+    vector<vector<ld>> points;
+    vector<pair<ld, ld>> coordinate_opened_rectangle(2*N);
+    vector<pair<ld, ld>> coordinate_closed_rectangle(2*N);
+    uint64_t id = 0;
+    for (size_t i = 0; i < N; ++i){
+        cin >> x >> x2 >> y >> y2;
+        if (y > y2){
+            vector<ld> v1{0, x, y, x2, 2 * M_PI, static_cast<long double>(id)};
+            points.emplace_back(v1);
+            coordinate_opened_rectangle[id] = make_pair(x, y);
+            vector<ld> v2{0, x, 0, x2, y2, static_cast<long double>(id + 1)};
+            points.emplace_back(v2);
+            coordinate_opened_rectangle[id + 1] = make_pair(x, 0);
+            vector<ld> v3{1, x2, 2 * M_PI, x, y,  static_cast<long double>(id)};
+            points.emplace_back(v3);
+            coordinate_closed_rectangle[id] = make_pair(x2, 2 * M_PI);
+            vector<ld> v4{1, x2, y2, x, 0,  static_cast<long double>(id + 1)};
+            points.emplace_back(v4);
+            coordinate_closed_rectangle[id + 1] = make_pair(x2, y2);
+            ++id; ++id;
+        }
+        else{
+            vector<ld> v1{0, x, y, x2, y2, static_cast<long double>(id)};
+            points.emplace_back(v1);
+            coordinate_opened_rectangle[id] = make_pair(x, y);
+            vector<ld> v2{1, x2, y2, x, y, static_cast<long double>(id)};
+            points.emplace_back(v2);
+            coordinate_closed_rectangle[id] = make_pair(x2, y2);
+            ++id;
+        }
+    }
+    sort(points.begin(), points.end(), cmp);
+    vector<unordered_set<ld>> components_rectangle(points.size() / 2);
+    unordered_set<ld> opened_rectangle;
+    ld S = 0;
+    for (size_t i = 0; i < points.size(); ++i){
+        if (!points[i][0]) {
+            for (auto& el: opened_rectangle)
+                if (points[i][1] < coordinate_closed_rectangle[el].first && points[i][2] < coordinate_closed_rectangle[el].second){
+                    components_rectangle[el].insert(points[i][5]);
+                }
+            opened_rectangle.insert(points[i][5]);
+        }
+        else{
+            bool useful_rectangle = true;
+            opened_rectangle.erase(opened_rectangle.find(points[i][5]));
+            for (auto& el : opened_rectangle){
+                if (auto index = components_rectangle[el].find(points[i][5]) != components_rectangle[el].end()){
+                    if (points[i][1] < coordinate_closed_rectangle[index].first && points[i][2] < coordinate_closed_rectangle[index].second)
+                    {
+                        components_rectangle[el].erase(components_rectangle[el].find(points[i][5]));
+                        useful_rectangle = false;
+                    }
 
+                }
+            }
+            if (useful_rectangle){
+                for (auto& el: components_rectangle[points[i][5]])
+                    S -= CalcArea(make_pair(max(coordinate_opened_rectangle[el].first, points[i][3]), max(coordinate_opened_rectangle[el].second, points[i][4]))
+                            , make_pair(min(coordinate_closed_rectangle[el].first, points[i][1]), min(coordinate_closed_rectangle[el].second, points[i][2])));
+                S += CalcArea(coordinate_opened_rectangle[points[i][5]], make_pair(points[i][1], points[i][2]));
+            }
+
+        }
+    }
+    cout << S;
     return 0;
 }
 #endif
+
+
+#ifdef B7_5
+#include <vector>
+#include <algorithm>
+#include <iostream>
+#include <iomanip>
+#include <cmath>
+#include <limits>
+
+using namespace std;
+typedef long double ld;
+
+ld calc_area(ld r_min, ld r_max, ld min_beam, ld max_beam){
+    return abs((r_max * r_max - r_min * r_min) * (max_beam - min_beam) * 0.5);
+}
+
+int main(){
+    size_t N;
+    cin >> N;
+    ld x, x2, y, y2;
+    ld min_closed_radius = 1.79769e+308;
+    ld max_opened_radius = 0;
+    vector<pair<ld, ld>> beams;
+    for (size_t i = 0; i < N; ++i) {
+        cin >> x >> x2 >> y >> y2;
+        if (x2 < min_closed_radius) min_closed_radius = x2;
+        if (x > max_opened_radius) max_opened_radius = x;
+        if (y > y2) {
+            beams.emplace_back(y, -1);
+            beams.emplace_back(6.2831853071795864768, 1);
+            beams.emplace_back(0, -1);
+            beams.emplace_back( y2, 1);
+        }
+        else{
+            beams.emplace_back(y, -1);
+            beams.emplace_back(y2, 1);
+        }
+
+    }
+    if (min_closed_radius < max_opened_radius){
+        cout << 0;
+        return 0;
+    }
+    int count = 0;
+    ld last_beam;
+    ld S = 0;
+    sort(beams.begin(), beams.end());
+    for (size_t i = 0; i < beams.size(); ++i){
+        if (beams[i].second == -1) {
+            ++count;
+            if (count == N) last_beam = beams[i].first;
+        }
+        if (beams[i].second == 1){
+            if (count == N) S += calc_area(min_closed_radius, max_opened_radius, last_beam, beams[i].first);
+            --count;
+        }
+    }
+    cout << std::fixed << std::setprecision(6) << S;
+    return 0;
+}
+#endif
+
+#ifdef B8_1
+#include<iostream>
+#include <string>
+using namespace std;
+struct tree{
+    int element;
+    tree* left;
+    tree* right;
+    int height;
+    bool is_root_initialize = true;
+    tree(int element, tree* left, tree* right, bool is_root_initialize, int height) : element(element), left(left), right(right), is_root_initialize(is_root_initialize), height(height){}
+    tree* add(int element){
+        if (!this->is_root_initialize) { this->is_root_initialize = true; this->element = element;  cout << "DONE" << endl; return this;}
+        if (element > this->element){
+            if (this->right == nullptr){
+                this->right = new tree(element, nullptr, nullptr, true, this->height + 1);
+                cout << "DONE" << endl;
+                return this->right;
+            }
+            else {
+                return this->right->add(element);
+            }
+        }
+        else if (element < this->element){
+            if (this->left == nullptr){
+                this->left = new tree(element, nullptr, nullptr, true, this->height + 1);
+                cout << "DONE" << endl;
+                return this->left;
+            }
+            else {
+                return this->left->add(element);
+            }
+        }
+        if (element == this->element) { cout << "ALREADY" << endl; return this;}
+    }
+    tree* search(int element){
+        if (!this->is_root_initialize) { cout << "NO" << endl; return this;}
+        if (element > this->element){
+            if (this->right == nullptr){
+                cout << "NO" << endl;
+                return this->right;
+            }
+            else {
+                return this->right->search(element);
+            }
+        }
+        else if (element < this->element){
+            if (this->left == nullptr){
+                cout << "NO" << endl;
+                return this->left;
+            }
+            else {
+                return this->left->search(element);
+            }
+        }
+        if (element == this->element) { cout << "YES" << endl; return this;}
+    }
+    void PRINT_TREE() const{
+        if (this->left) this->left->PRINT_TREE();
+        for (size_t i = 0; i < this->height; ++i) cout << ".";
+        cout << this->element << endl;
+        if (this-> right) this->right->PRINT_TREE();
+    }
+};
+
+
+int main(){
+    string str; string str2; int key;
+    tree my_tree(0, nullptr, nullptr, false, 0);
+    while (cin >> str){
+        if (str == "ADD") {
+            cin >> key;
+            my_tree.add(key);
+        }
+        else if (str == "SEARCH") {
+            cin >> key;
+            my_tree.search(key);
+        }
+        else if (str == "PRINTTREE"){
+            my_tree.PRINT_TREE();
+        }
+    }
+    return 0;
+}
+#endif
+
+#ifdef B8_2
+#include<iostream>
+#include <string>
+using namespace std;
+struct tree{
+public:
+    string name{};
+    tree** array = nullptr;
+
+//    size_t height;
+    static uint64_t count_element_in_tree;
+    size_t count_element;
+    tree(size_t count_element, string name = ""): name(name), count_element(count_element){
+        array = new tree* [count_element];
+        for (size_t i = 0; i < count_element; ++i)
+            array[i] = nullptr;
+        ++tree::count_element_in_tree;
+
+    }
+    int add(string& descendent, string& parent){
+        auto p = search(parent);
+        tree* d = nullptr;
+        size_t j = 0;
+        while (j < count_element){
+            if (array[j] && array[j]->name == descendent){
+                d = array[j];
+            }
+            ++j;
+        }
+        if (p){
+            if(d){
+                size_t i = 0;
+                while (p->array[i]) ++i;
+                swap(p->array[i], d);
+            }
+            else{
+                size_t i = 0;
+                while (p->array[i]) ++i;
+                p->array[i] = new tree(this->count_element - tree::count_element_in_tree, descendent);
+                return 0;
+            }
+
+       }
+       else{
+           if(d){
+               size_t i = 0;
+               while (array[i]) ++i;
+               array[i] = new tree(this->count_element - tree::count_element_in_tree, parent);
+               swap(array[i]->array[0], d);
+           }
+           else{
+               size_t i = 0;
+               while (array[i]) ++i;
+               array[i] = new tree(this->count_element - tree::count_element_in_tree, parent);
+               array[i]->array[0] = new tree(this->count_element - tree::count_element_in_tree, descendent);
+           }
+       }
+    }
+
+    tree* search(string& search_name){
+        size_t i = 0;
+        if (name == search_name) return this;
+        while (array[i] && array[i]->name != search_name) {
+            tree* point_to_ans = array[i]->search(search_name);
+            if (point_to_ans) return point_to_ans;
+            ++i;
+        }
+        if (array[i] && array[i]->name == search_name) return array[i];
+        else return nullptr;
+    }
+    int what_type_of_relationship(string& first_name, string& second_name){
+        auto first = search(first_name);
+        auto second = search(second_name);
+        if (first->search(second_name)) return 1;
+        if (second->search(first_name)) return 2;
+        return 0;
+
+    }
+};
+
+uint64_t tree::count_element_in_tree = 0;
+
+int main(){
+    size_t count_element;
+    cin >> count_element;
+    string descendent; string parent;
+    tree my_tree(count_element, "");
+
+    for (size_t i = 0; i < count_element - 1; ++i){
+        cin >> descendent; cin >> parent;
+        my_tree.add(descendent, parent);
+    }
+    string first; string second;
+    size_t j = 0;
+    while(cin >> first){
+        cin >> second;
+        cout << my_tree.what_type_of_relationship(first ,second) << " ";
+        ++j;
+    }
+    return 0;
+}
+
+/*
+ *    auto p = my_tree.search(parent);
+    string first_descendent = "Alexei";
+    string second_descendent = "Anna";
+    string third_descendent = "Colin";
+    my_tree.array[0] = new tree(count_element, first_descendent);
+    my_tree.array[1] = new tree(count_element, second_descendent);
+    my_tree.array[0]->array[0] = new tree(count_element, third_descendent);
+    auto p2 = my_tree.search(first_descendent);
+    auto p3 = my_tree.search(second_descendent);
+    auto p4 = my_tree.search(third_descendent);
+ */
+/*
+ * 1 0 0 0 0 2 0 0 0 2 0 0 0 0 2 0 0 0 0 0 0 0 1 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 2 0 0 2 0 0 0 1 1 1 0 1 1 1 1 1 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 2 0 0
+ * 1 0 0 0 0 2 0 0 0 2 0 0 0 0 2 0 0 0 0 0 0 0 1 2 0 0 0 0 0 0 0 0 2 0 2 0 0 0 0 0 0 2 0 0 0 0 0 2 0 0 2 0 0 0 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 2 0 0 0 0 0 1 0 0 2 0 0 0 0 0 0 0 0 2 0 0
+ * 1 0 0 0 0 2 0 0 0 2 0 0 0 0 2 0 0 0 0 0 0 0 1 2 0 0 0 0 0 0 0 0 2 0 2 0 0 0 0 0 0 2 0 0 0 0 0 2 0 0 2 0 0 0 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 2 0 0 0 0 0 1 0 0 2 0 0 0 0 0 0 0 0 2 0 0
+ * 1 0 0 0 0 2 0 0 0 2 0 0 0 0 2 0 0 0 0 0 0 0 1 2 0 0 0 0 0 0 0 0 2 0 2 0 0 0 0 0 0 2 0 0 0 0 0 2 0 0 2 0 0 0 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 2 0 0 0 0 0 1 0 0 2 0 0 0 0 0 0 0 0 2 0
+ */
+#endif
+
+#ifdef B8_2_vector
+
+#include<iostream>
+#include <string>
+#include <vector>
+using namespace std;
+struct tree{
+public:
+    string name{};
+    vector<tree*> vec;
+    tree* parent;
+    static uint64_t count_element_in_tree;
+    tree(string name = "", tree* parent = nullptr): name(name), parent(parent){}
+    void add(string& descendent, string& parent){
+        auto p = search(parent);
+        tree* d = nullptr;
+        size_t j = 0;
+        size_t ind = 0;
+        while (j < vec.size()){
+            if (vec[j] && vec[j]->name == descendent){
+                d = vec[j];
+                ind = j;
+            }
+            ++j;
+        }
+        if (p){
+            if(d){
+                d->parent = p;
+                p->vec.emplace_back(d);
+                vec.erase(vec.begin() + ind);
+            }
+            else{
+                auto d = new tree(descendent);
+                d->parent = p;
+                p->vec.emplace_back(d);
+            }
+        }
+        else{
+            if(d){
+                auto p = new tree(parent);
+                vec.emplace_back(p);
+                d->parent = p;
+                vec[vec.size() - 1]->vec.emplace_back(d);
+                vec.erase(vec.begin() + ind);
+            }
+            else{
+                auto p = new tree(parent);
+                vec.emplace_back(p);
+                vec[vec.size() - 1]->vec.emplace_back(new tree(descendent, p));
+            }
+        }
+    }
+
+    tree* search(string& search_name){
+        size_t i = 0;
+        if (name == search_name) return this;
+        while (i < vec.size() && vec[i] && vec[i]->name != search_name) {
+            tree* point_to_ans = vec[i]->search(search_name);
+            if (point_to_ans) return point_to_ans;
+            ++i;
+        }
+        if (vec.size() > 0 && i < vec.size() && vec[i] && vec[i]->name == search_name) return vec[i];
+        else return nullptr;
+    }
+    int what_type_of_relationship(string& first_name, string& second_name){
+        auto first = search(first_name);
+//        auto second = search(second_name);
+        if (first->is_descendent(second_name)) return 2;
+        if (first->search(second_name)) return 1;
+        return 0;
+    }
+    bool is_descendent(string& second_name){
+        auto temp = this;
+        while (temp->parent){
+            if (temp->parent->name == second_name) return true;
+            temp = temp->parent;
+        }
+        return false;
+    }
+};
+
+
+int main(){
+    size_t count_element;
+    cin >> count_element;
+    string descendent; string parent;
+    tree my_tree("");
+
+    for (size_t i = 0; i < count_element - 1; ++i){
+        cin >> descendent; cin >> parent;
+        my_tree.add(descendent, parent);
+    }
+    string first; string second;
+    size_t j = 0;
+    while(cin >> first){
+        cin >> second;
+        cout << my_tree.what_type_of_relationship(first ,second) << " ";
+        ++j;
+    }
+    return 0;
+}
+
+#endif
+
+#ifdef B8_3
+#include<iostream>
+#include <string>
+#include <vector>
+#include <unordered_set>
+#include <algorithm>
+#include<map>
+#include <cmath>
+
+using namespace std;
+
+struct tree;
+map<string, int> level;
+map<tree*, vector<tree*>> ancestor;
+vector<tree*> tree_list;
+map<string, tree*> tree_map;
+
+struct tree{
+public:
+    string name{};
+    vector<tree*> vec;
+    tree* parent;
+    tree(string name = "", tree* parent = nullptr): name(name), parent(parent){}
+    void add(string& descendent, string& parent){
+        auto p = search(parent);
+        tree* d = nullptr;
+        size_t j = 0;
+        size_t ind = 0;
+        while (j < vec.size()){
+            if (vec[j] && vec[j]->name == descendent){
+                d = vec[j];
+                ind = j;
+            }
+            ++j;
+        }
+        if (p){
+            if(d){
+                d->parent = p;
+                p->vec.emplace_back(d);
+                vec.erase(vec.begin() + ind);
+            }
+            else{
+                auto d = new tree(descendent);
+                d->parent = p;
+                p->vec.emplace_back(d);
+            }
+        }
+        else{
+            if(d){
+                auto p = new tree(parent);
+                vec.emplace_back(p);
+                d->parent = p;
+                vec[vec.size() - 1]->vec.emplace_back(d);
+                vec.erase(vec.begin() + ind);
+            }
+            else{
+                auto p = new tree(parent);
+                vec.emplace_back(p);
+                vec[vec.size() - 1]->vec.emplace_back(new tree(descendent, p));
+            }
+        }
+    }
+
+    tree* search(string& search_name) {
+        size_t i = 0;
+        if (name == search_name) return this;
+        while (i < vec.size() && vec[i] && vec[i]->name != search_name) {
+            tree *point_to_ans = vec[i]->search(search_name);
+            if (point_to_ans) return point_to_ans;
+            ++i;
+        }
+        if (vec.size() > 0 && i < vec.size() && vec[i] && vec[i]->name == search_name) return vec[i];
+        else return nullptr;
+    }
+
+    void dfs(tree* vertex, size_t lvl){
+        level[vertex->name] = lvl;
+        for (auto& v: vertex->vec){
+            dfs(v, lvl + 1);
+        }
+    }
+    void fill_ancestor(tree* vertex, size_t n){
+        for (auto& v: vertex->vec){
+            ancestor[v].push_back(v->parent);
+            for (size_t i = 0; i < log2(n); ++i) {
+                ancestor[v].push_back(nullptr);
+            }
+            fill_ancestor(v, n);
+        }
+    }
+    void get_tree(tree* vertex){
+        if (vertex->name != "") tree_list.push_back(vertex);
+        for (auto& v: vertex->vec){
+            get_tree(v);
+        }
+    }
+    void get_tree_map(tree* vertex){
+        if (vertex->name != "") tree_map[vertex->name] = vertex;
+        for (auto& v: vertex->vec){
+            get_tree_map(v);
+        }
+    }
+    void preprocess(size_t n) {
+        fill_ancestor(this, n);
+        dfs(this, 0);
+        for (size_t i = 1; i < log2(n); ++i) {
+            for (auto& v: tree_list) {
+                if (ancestor[v][i - 1] != nullptr) {
+                    ancestor[v][i] = ancestor[ancestor[v][i - 1]][i - 1];
+                }
+            }
+        }
+    }
+    tree* LCA(string& first_name, string& second_name, size_t n) {
+        auto u = tree_map[first_name];
+        auto v = tree_map[second_name];
+        if (level[u->name] > level[v->name]) swap(u, v);
+        for (int k = log2(n) ; k >= 0; --k) {
+            if (level[v->name] - pow(2, k) >= level[u->name]) {
+                v = ancestor[v][k];
+            }
+        }
+        if (u == v) {
+            return u;
+        }
+        for (int k = log2(n) ; k >= 0; --k) {
+            if (ancestor[v][k] != ancestor[u][k]) {
+                u = ancestor[u][k];
+                v = ancestor[v][k];
+            }
+        }
+        return u->parent;
+    }
+};
+
+
+int main(){
+    size_t count_element;
+    cin >> count_element;
+
+    string descendent; string parent;
+    tree my_tree("");
+
+    for (size_t i = 0; i < count_element - 1; ++i){
+        cin >> descendent; cin >> parent;
+        my_tree.add(descendent, parent);
+    }
+    string first; string second;
+    size_t j = 0;
+    my_tree.get_tree(&my_tree);
+    my_tree.get_tree_map(&my_tree);
+    my_tree.preprocess(count_element);
+    while(cin >> first){
+        cin >> second;
+
+        cout << my_tree.LCA(first ,second, count_element)->name << endl;
+        ++j;
+    }
+    return 0;
+}
+
+
+#endif
+
+
 
