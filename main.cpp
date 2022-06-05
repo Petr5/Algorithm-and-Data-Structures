@@ -35,7 +35,9 @@
 //#define B8_1
 //#define B8_2
 //#define B8_2_vector
-#define B8_3
+//#define B8_3
+#define B8_4
+
 
 
 
@@ -2224,7 +2226,52 @@ int main(){
     return 0;
 }
 
+#endif
 
+#ifdef B8_4
+
+#include <vector>
+#include <iostream>
+using namespace std;
+vector<bool> visited;
+vector<int> path;
+
+void hamilton_way(int number, uint64_t& max_count,  vector<vector<int>>& graph) {
+    static uint64_t count = 0;
+    ++count;
+    if (max_count < count) max_count = count;
+    visited[number] = true;
+    for (auto &el: graph[number]) {
+        if (!visited[el]) {
+            hamilton_way(el, max_count, graph);
+        }
+    }
+    --count;
+    visited[number] = false;
+}
+int main(){
+    size_t n;
+    uint64_t first_number; uint64_t second_number;
+    cin >> n;
+    vector<vector<int>> graph(n);
+    visited.resize(n, false);
+
+    for (size_t i = 0; i < n - 1; ++i){
+        cin >> first_number; cin >> second_number;
+        --first_number; --second_number;
+        graph[first_number].emplace_back(second_number); ;
+        graph[second_number].emplace_back(first_number);
+    }
+    uint64_t max =  0;
+    for (size_t i = 0; i < n; ++i){
+        uint64_t max_count = 0;
+        hamilton_way(i, max_count, graph);
+        if (max < max_count) max = max_count;
+    }
+
+    cout << max << endl;
+    return 0;
+}
 #endif
 
 
