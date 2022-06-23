@@ -36,8 +36,8 @@
 //#define B8_2
 //#define B8_2_vector
 //#define B8_3
-#define B8_4
-
+//#define B8_4
+#define B8_5
 
 
 
@@ -2276,5 +2276,116 @@ int main(){
 }
 #endif
 
+#ifdef B8_5
+#include <vector>
+#include <iostream>
+using namespace std;
+
+struct tree{
+        public:
+        string name{};
+        tree** array = nullptr;
+
+//    size_t height;
+        static uint64_t count_element_in_tree;
+        size_t count_element;
+        tree(size_t count_element, string name = ""): name(name), count_element(count_element){
+            array = new tree* [count_element];
+            for (size_t i = 0; i < count_element; ++i)
+                array[i] = nullptr;
+            ++tree::count_element_in_tree;
+
+        }
+        int add(string& descendent, string& parent){
+            auto p = search(parent);
+            tree* d = nullptr;
+            size_t j = 0;
+            while (j < count_element){
+                if (array[j] && array[j]->name == descendent){
+                    d = array[j];
+                }
+                ++j;
+            }
+            if (p){
+                if(d){
+                    size_t i = 0;
+                    while (p->array[i]) ++i;
+                    swap(p->array[i], d);
+                }
+                else{
+                    size_t i = 0;
+                    while (p->array[i]) ++i;
+                    p->array[i] = new tree(this->count_element - tree::count_element_in_tree, descendent);
+                    return 0;
+                }
+
+            }
+            else{
+                if(d){
+                    size_t i = 0;
+                    while (array[i]) ++i;
+                    array[i] = new tree(this->count_element - tree::count_element_in_tree, parent);
+                    swap(array[i]->array[0], d);
+                }
+                else{
+                    size_t i = 0;
+                    while (array[i]) ++i;
+                    array[i] = new tree(this->count_element - tree::count_element_in_tree, parent);
+                    array[i]->array[0] = new tree(this->count_element - tree::count_element_in_tree, descendent);
+                }
+            }
+        }
+
+        tree* search(string& search_name){
+            size_t i = 0;
+            if (name == search_name) return this;
+            while (array[i] && array[i]->name != search_name) {
+                tree* point_to_ans = array[i]->search(search_name);
+                if (point_to_ans) return point_to_ans;
+                ++i;
+            }
+            if (array[i] && array[i]->name == search_name) return array[i];
+            else return nullptr;
+        }
+
+};
+
+void process_encryption(string str){
+    string path;
+    vector<bool> is_left_descendent;
+    size_t j = 0;
+    vector<string> result;
+    char* buff;
+    for (auto ch : str){
+        if (ch == 'D'){
+            path += '0';
+//            ++j;
+            is_left_descendent.push_back(true);
+        }
+        else if (ch == 'U'){
+//          cout << path << endl;
+            result.push_back(path + '\n');
+            while (!is_left_descendent[is_left_descendent.size() - 1]) {path.pop_back(); is_left_descendent.pop_back();}
+            path.pop_back(); is_left_descendent.pop_back();
+            path += '1';
+            is_left_descendent.push_back(false);
+        }
+    }
+    result.push_back(path + '\n');
+    cout << result.size() << endl;
+    for (auto& el : result) cout << el;
+}
+
+int main(){
+    size_t n;
+    cin >> n;
+    string str;
+    for (size_t i = 0; i < n; ++i){
+        cin >> str;
+        process_encryption(str);
+    }
+    return 0;
+}
+#endif
 
 
